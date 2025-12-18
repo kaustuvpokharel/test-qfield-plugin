@@ -1,0 +1,4 @@
+[general]
+name=XHR Tester
+description=Developer plugin to test QField's core XmlHttpRequest (JSON, text, multipart upload, progress, abort, timeout, redirects).
+author=Kaustuv Pokharel / OPENGIS.ch
