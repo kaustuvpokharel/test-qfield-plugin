@@ -293,21 +293,64 @@ Item {
     }
 
     popup: Popup {
-      y: cb.height + 6
+      id: pop
+
+      // IMPORTANT: re-parent popup so it's not clipped / dimmed by Flickable/Card
+      parent: panel.contentItem
+      modal: false
+      dim: false
+      focus: true
+      closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
       width: cb.width
-      implicitHeight: Math.min(list.contentHeight + 8, 280)
-      background: Rectangle { radius: 10; color: "#1a1a1a"; border.color: root.border; border.width: 1 }
+
+      // because parent changed, position must be mapped
+      x: cb.mapToItem(parent, 0, cb.height + 6).x
+      y: cb.mapToItem(parent, 0, cb.height + 6).y
+
+      padding: 6
+      z: 9999
+
+      background: Rectangle {
+        radius: 12
+        color: root.cardBg
+        border.color: root.border
+        border.width: 1
+      }
 
       contentItem: ListView {
         id: list
         clip: true
         model: cb.model
-        currentIndex: cb.highlightedIndex
+        implicitHeight: Math.min(contentHeight, 280)
 
-        delegate: ItemDelegate {
+        delegate: Rectangle {
           width: ListView.view.width
-          text: (typeof modelData === "string") ? modelData : (modelData ? String(modelData) : "")
-          highlighted: index === cb.highlightedIndex
+          height: 42
+          radius: 10
+          color: (index === cb.currentIndex) ? "#242424"
+                : (mouse.containsMouse ? "#202020" : "transparent")
+
+          Text {
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.left: parent.left
+            anchors.leftMargin: 12
+            anchors.right: parent.right
+            anchors.rightMargin: 12
+            elide: Text.ElideRight
+            color: root.fg
+            text: (typeof modelData === "string") ? modelData : String(modelData)
+          }
+
+          MouseArea {
+            id: mouse
+            anchors.fill: parent
+            hoverEnabled: true
+            onClicked: {
+              cb.currentIndex = index
+              pop.close()
+            }
+          }
         }
       }
     }
@@ -371,7 +414,7 @@ Item {
     const hasCT = headersArea.text.toLowerCase().indexOf("content-type:") !== -1
     const body = bodyArea.text
 
-    if (!hasCT && body && body.trim().length > 0 && method !== "GET" && method !== "HEAD") {
+    if (!hasCT && body && body.trim().length > 0 && (method === "POST" || method === "PUT")) {
       xhr.setRequestHeader("Content-Type", "application/json")
     }
 
@@ -570,7 +613,7 @@ Item {
 
                   NiceCombo {
                     id: methodBox
-                    model: ["GET","POST","PUT","PATCH","DELETE","HEAD"]
+                    model: ["GET","POST","PUT","DELETE"]
                     currentIndex: 0
                     Layout.fillWidth: true
                   }
@@ -670,7 +713,7 @@ Item {
 
                   H2 { text: "Body (Text / JSON)" }
 
-                  BodyText { text: "For POST/PUT/PATCH: paste JSON or text here. This tester sends it as a raw string." }
+                  BodyText { text: "For POST/PUT: paste JSON or text here. This tester sends it as a raw string." }
 
                   FieldArea {
                     id: bodyArea
