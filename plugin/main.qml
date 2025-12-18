@@ -101,8 +101,8 @@ Item {
     font.pixelSize: 22
     font.bold: true
     wrapMode: Text.Wrap
-    width: parent.width
     elide: Text.ElideRight
+    Layout.fillWidth: true
   }
 
   component H2: Text {
@@ -110,14 +110,14 @@ Item {
     font.pixelSize: 16
     font.bold: true
     wrapMode: Text.Wrap
-    width: parent.width
+    Layout.fillWidth: true
   }
 
   component BodyText: Text {
     color: root.muted
     font.pixelSize: 12
-    width: parent.width
     wrapMode: Text.Wrap
+    Layout.fillWidth: true
   }
 
   component FieldText: TextField {
@@ -301,273 +301,136 @@ Item {
     contentItem: Item {
       anchors.fill: parent
 
-      Flickable {
-        id: flick
+      Item {
+        id: scrollHost
         anchors.fill: parent
         anchors.margins: 14
-        clip: true
-        boundsBehavior: Flickable.StopAtBounds
-        contentWidth: width
-        contentHeight: contentCol.implicitHeight
 
-        ScrollBar.vertical: ScrollBar {
-          policy: ScrollBar.AlwaysOn
-        }
+        Flickable {
+          id: flick
+          anchors.fill: parent
+          anchors.rightMargin: vbar.width + 8
+          clip: true
+          boundsBehavior: Flickable.StopAtBounds
+          contentWidth: width
+          contentHeight: contentCol.implicitHeight
 
-        Column {
-          id: contentCol
-          width: flick.width
-          spacing: 12
-
-          // Header
-          Row {
-            width: parent.width
-            spacing: 10
-
-            Column {
-              width: Math.max(200, parent.width - 240)
-              spacing: 6
-
-              H1 { text: "XmlHttpRequest Tester" }
-
-              BodyText {
-                text: "Goal: validate core XmlHttpRequest behavior (readyState, headers, JSON/text, redirect, timeout, abort, multipart)."
-              }
-            }
-
-            Item { width: 1; height: 1; Layout.fillWidth: true } // harmless spacer
-
-            PillButton {
-              text: "Reset XHR"
-              onClicked: resetXhr()
-            }
-
-            PillButton {
-              text: "Close"
-              onClicked: panel.close()
-            }
+          ScrollBar.vertical: ScrollBar {
+            id: vbar
+            parent: scrollHost
+            anchors.top: scrollHost.top
+            anchors.bottom: scrollHost.bottom
+            anchors.right: scrollHost.right
+            policy: ScrollBar.AlwaysOn
           }
 
-          // Request card
-          Card {
-            width: parent.width
-            implicitHeight: reqCol.implicitHeight + 20
+          Column {
+            id: contentCol
+            width: flick.width
+            spacing: 12
 
-            Column {
-              id: reqCol
-              anchors.left: parent.left
-              anchors.right: parent.right
-              anchors.top: parent.top
-              anchors.margins: root.cardPad
+            // Header
+            Row {
+              width: parent.width
               spacing: 10
 
-              H2 { text: "Request" }
+              Column {
+                width: Math.max(200, parent.width - 240)
+                spacing: 6
 
-              GridLayout {
-                id: reqGrid
-                width: parent.width
-                columns: root.narrow ? 1 : 3
-                columnSpacing: 10
-                rowSpacing: 10
+                H1 { text: "XmlHttpRequest Tester" }
 
-                // Method
-                Item {
-                  Layout.fillWidth: true
-                  implicitHeight: 42
-                  NiceCombo {
-                    id: methodBox
-                    anchors.fill: parent
-                    model: ["GET","POST","PUT","PATCH","DELETE","HEAD"]
-                    currentIndex: 0
-                  }
+                BodyText {
+                  text: "Goal: validate core XmlHttpRequest behavior (readyState, headers, JSON/text, redirect, timeout, abort, multipart)."
                 }
+              }
 
-                // URL
-                FieldText {
-                  id: urlField
-                  placeholderText: "https://httpbin.org/anything"
-                  text: "https://httpbin.org/anything"
-                  Layout.fillWidth: true
-                }
+              Item { width: 1; height: 1; Layout.fillWidth: true } // harmless spacer
 
-                // Timeout
-                FieldText {
-                  id: timeoutField
-                  inputMethodHints: Qt.ImhDigitsOnly
-                  placeholderText: "timeout ms (0 disables)"
-                  text: "0"
-                  Layout.fillWidth: true
-                }
+              PillButton {
+                text: "Reset XHR"
+                onClicked: resetXhr()
+              }
 
-                // Headers (full row)
-                Item {
-                  Layout.columnSpan: root.narrow ? 1 : 3
-                  Layout.fillWidth: true
-                  implicitHeight: 110
+              PillButton {
+                text: "Close"
+                onClicked: panel.close()
+              }
+            }
 
-                  Column {
-                    Layout.columnSpan: root.narrow ? 1 : 3
+            // Request card
+            Card {
+              width: parent.width
+              implicitHeight: reqCol.implicitHeight + 20
+
+              Column {
+                id: reqCol
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.margins: root.cardPad
+                spacing: 10
+
+                H2 { text: "Request" }
+
+                GridLayout {
+                  id: reqGrid
+                  width: parent.width
+                  columns: root.narrow ? 1 : 3
+                  columnSpacing: 10
+                  rowSpacing: 10
+
+                  // Method
+                  Item {
                     Layout.fillWidth: true
-                    spacing: 6
-
-                    BodyText { text: "Headers (one per line). Example:\nContent-Type: application/json\nAuthorization: Bearer <token>" }
-
-                    FieldArea {
-                      id: headersArea
-                      Layout.fillWidth: true
-                      Layout.preferredHeight: 90
-                      text: ""
+                    implicitHeight: 42
+                    NiceCombo {
+                      id: methodBox
+                      anchors.fill: parent
+                      model: ["GET","POST","PUT","PATCH","DELETE","HEAD"]
+                      currentIndex: 0
                     }
                   }
-                }
-              }
 
-              Flow {
-                width: parent.width
-                spacing: 10
-
-                PillButton {
-                  text: "Send (text/json)"
-                  onClicked: {
-                    ensureXhr()
-                    sendTextOrJson()
-                  }
-                }
-
-                PillButton {
-                  text: "GET /get"
-                  onClicked: {
-                    urlField.text = "https://httpbin.org/get"
-                    methodBox.currentIndex = 0
-                    timeoutField.text = "0"
-                    headersArea.text = ""
-                    bodyArea.text = ""
-                    sendTextOrJson()
-                  }
-                }
-
-                PillButton {
-                  text: "Redirect"
-                  onClicked: {
-                    urlField.text = "https://httpbin.org/redirect/1"
-                    methodBox.currentIndex = 0
-                    timeoutField.text = "0"
-                    headersArea.text = ""
-                    bodyArea.text = ""
-                    sendTextOrJson()
-                  }
-                }
-
-                PillButton {
-                  text: "Timeout"
-                  onClicked: {
-                    urlField.text = "https://httpbin.org/delay/5"
-                    methodBox.currentIndex = 0
-                    timeoutField.text = "1000"
-                    headersArea.text = ""
-                    bodyArea.text = ""
-                    sendTextOrJson()
-                  }
-                }
-
-                PillButton {
-                  text: "Abort"
-                  onClicked: {
-                    if (xhr) xhr.abort()
-                  }
-                }
-              }
-            }
-          }
-
-          GridLayout {
-            width: parent.width
-            columns: root.narrow ? 1 : 2
-            columnSpacing: 12
-            rowSpacing: 12
-
-            Card {
-              Layout.fillWidth: true
-              implicitHeight: bodyCol.implicitHeight + root.cardPad * 2
-
-              Column {
-                id: bodyCol
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.top: parent.top
-                anchors.margins: root.cardPad
-                spacing: 10
-
-                H2 { text: "Body (Text / JSON)" }
-
-                BodyText { text: "For POST/PUT/PATCH: paste JSON or text here. This tester sends it as a *raw string*." }
-
-                FieldArea {
-                  id: bodyArea
-                  Layout.fillWidth: true
-                  height: root.narrow ? 160 : 200
-                  text: "{\n  \"hello\": \"qfield\",\n  \"when\": \"" + (new Date()).toISOString() + "\"\n}"
-                }
-
-                BodyText {
-                  text: "If you want C++ to parse JSON, set header Content-Type: application/json and parse responseType/responseText as needed."
-                }
-              }
-            }
-
-            // Multipart
-            Card {
-              Layout.fillWidth: true
-              implicitHeight: mpCol.implicitHeight + root.cardPad * 2
-
-              Column {
-                id: mpCol
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.top: parent.top
-                anchors.margins: root.cardPad
-                spacing: 10
-
-                H2 { text: "Multipart upload" }
-
-                BodyText {
-                  text: "Important: core XmlHttpRequest may block arbitrary local uploads. To test: copy the file INTO the current QField project folder (or cloud project folder), then pick it."
-                }
-
-                Row {
-                  width: parent.width
-                  spacing: 10
-
+                  // URL
                   FieldText {
-                    id: fileField
-                    width: Math.max(120, parent.width - pickBtn.implicitWidth - 10)
-                    placeholderText: "Picked file URL (file:///...)"
-                    readOnly: true
+                    id: urlField
+                    placeholderText: "https://httpbin.org/anything"
+                    text: "https://httpbin.org/anything"
+                    Layout.fillWidth: true
                   }
 
-                  PillButton {
-                    id: pickBtn
-                    text: "Pick…"
-                    onClicked: fileDialog.open()
-                  }
-                }
-
-                Row {
-                  width: parent.width
-                  spacing: 10
-
-                  Column {
-                    width: parent.width * 0.55
-                    spacing: 6
-                    BodyText { text: "file field name" }
-                    FieldText { id: uploadNameField; width: parent.width; text: "file" }
+                  // Timeout
+                  FieldText {
+                    id: timeoutField
+                    inputMethodHints: Qt.ImhDigitsOnly
+                    placeholderText: "timeout ms (0 disables)"
+                    text: "0"
+                    Layout.fillWidth: true
                   }
 
-                  Column {
-                    width: parent.width * 0.45 - 10
-                    spacing: 6
-                    BodyText { text: "note" }
-                    FieldText { id: uploadNoteField; width: parent.width; text: "Hello from QField plugin" }
+                  // Headers (full row)
+                  Item {
+                    Layout.columnSpan: root.narrow ? 1 : 3
+                    Layout.fillWidth: true
+                    implicitHeight: 110
+
+                    Column {
+                      Layout.columnSpan: root.narrow ? 1 : 3
+                      Layout.fillWidth: true
+                      spacing: 6
+
+                      BodyText {
+                        text: "Headers (one per line). Example:\nContent-Type: application/json\nAuthorization: Bearer <token>"
+                      }
+
+                      FieldArea {
+                        id: headersArea
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 90
+                        text: ""
+                      }
+                    }
                   }
                 }
 
@@ -576,307 +439,456 @@ Item {
                   spacing: 10
 
                   PillButton {
-                    text: "Upload to httpbin.org/post"
+                    text: "Send (text/json)"
                     onClicked: {
                       ensureXhr()
-                      urlField.text = "https://httpbin.org/post"
-                      methodBox.currentIndex = 1 // POST
-                      sendMultipart()
+                      sendTextOrJson()
                     }
                   }
 
                   PillButton {
-                    text: "Quick: set Content-Type multipart"
+                    text: "GET /get"
                     onClicked: {
-                      // add a Content-Type header line if missing
-                      const lower = headersArea.text.toLowerCase()
-                      if (lower.indexOf("content-type:") === -1) {
-                        headersArea.text = (headersArea.text.trim().length ? headersArea.text.trim() + "\n" : "") + "Content-Type: multipart/form-data"
+                      urlField.text = "https://httpbin.org/get"
+                      methodBox.currentIndex = 0
+                      timeoutField.text = "0"
+                      headersArea.text = ""
+                      bodyArea.text = ""
+                      sendTextOrJson()
+                    }
+                  }
+
+                  PillButton {
+                    text: "Redirect"
+                    onClicked: {
+                      urlField.text = "https://httpbin.org/redirect/1"
+                      methodBox.currentIndex = 0
+                      timeoutField.text = "0"
+                      headersArea.text = ""
+                      bodyArea.text = ""
+                      sendTextOrJson()
+                    }
+                  }
+
+                  PillButton {
+                    text: "Timeout"
+                    onClicked: {
+                      urlField.text = "https://httpbin.org/delay/5"
+                      methodBox.currentIndex = 0
+                      timeoutField.text = "1000"
+                      headersArea.text = ""
+                      bodyArea.text = ""
+                      sendTextOrJson()
+                    }
+                  }
+
+                  PillButton {
+                    text: "Abort"
+                    onClicked: {
+                      if (xhr) xhr.abort()
+                    }
+                  }
+                }
+              }
+            }
+
+            GridLayout {
+              width: parent.width
+              columns: root.narrow ? 1 : 2
+              columnSpacing: 12
+              rowSpacing: 12
+
+              Card {
+                Layout.fillWidth: true
+                implicitHeight: bodyCol.implicitHeight + root.cardPad * 2
+
+                Column {
+                  id: bodyCol
+                  anchors.left: parent.left
+                  anchors.right: parent.right
+                  anchors.top: parent.top
+                  anchors.margins: root.cardPad
+                  spacing: 10
+
+                  H2 { text: "Body (Text / JSON)" }
+
+                  BodyText { text: "For POST/PUT/PATCH: paste JSON or text here. This tester sends it as a *raw string*." }
+
+                  FieldArea {
+                    id: bodyArea
+                    Layout.fillWidth: true
+                    height: root.narrow ? 160 : 200
+                    text: "{\n  \"hello\": \"qfield\",\n  \"when\": \"" + (new Date()).toISOString() + "\"\n}"
+                  }
+
+                  BodyText {
+                    text: "If you want C++ to parse JSON, set header Content-Type: application/json and parse responseType/responseText as needed."
+                  }
+                }
+              }
+
+              // Multipart
+              Card {
+                Layout.fillWidth: true
+                implicitHeight: mpCol.implicitHeight + root.cardPad * 2
+
+                Column {
+                  id: mpCol
+                  anchors.left: parent.left
+                  anchors.right: parent.right
+                  anchors.top: parent.top
+                  anchors.margins: root.cardPad
+                  spacing: 10
+
+                  H2 { text: "Multipart upload" }
+
+                  BodyText {
+                    text: "Important: core XmlHttpRequest may block arbitrary local uploads. To test: copy the file INTO the current QField project folder (or cloud project folder), then pick it."
+                  }
+
+                  Row {
+                    width: parent.width
+                    spacing: 10
+
+                    FieldText {
+                      id: fileField
+                      width: Math.max(120, parent.width - pickBtn.implicitWidth - 10)
+                      placeholderText: "Picked file URL (file:///...)"
+                      readOnly: true
+                    }
+
+                    PillButton {
+                      id: pickBtn
+                      text: "Pick…"
+                      onClicked: fileDialog.open()
+                    }
+                  }
+
+                  Row {
+                    width: parent.width
+                    spacing: 10
+
+                    Column {
+                      width: parent.width * 0.55
+                      spacing: 6
+                      BodyText { text: "file field name" }
+                      FieldText { id: uploadNameField; width: parent.width; text: "file" }
+                    }
+
+                    Column {
+                      width: parent.width * 0.45 - 10
+                      spacing: 6
+                      BodyText { text: "note" }
+                      FieldText { id: uploadNoteField; width: parent.width; text: "Hello from QField plugin" }
+                    }
+                  }
+
+                  Flow {
+                    width: parent.width
+                    spacing: 10
+
+                    PillButton {
+                      text: "Upload to httpbin.org/post"
+                      onClicked: {
+                        ensureXhr()
+                        urlField.text = "https://httpbin.org/post"
+                        methodBox.currentIndex = 1 // POST
+                        sendMultipart()
+                      }
+                    }
+
+                    PillButton {
+                      text: "Quick: set Content-Type multipart"
+                      onClicked: {
+                        // add a Content-Type header line if missing
+                        const lower = headersArea.text.toLowerCase()
+                        if (lower.indexOf("content-type:") === -1) {
+                          headersArea.text = (headersArea.text.trim().length ? headersArea.text.trim() + "\n" : "") + "Content-Type: multipart/form-data"
+                        }
                       }
                     }
                   }
                 }
               }
             }
-          }
 
-          // Response
-          Card {
-            width: parent.width
-            implicitHeight: respCol.implicitHeight + root.cardPad * 2
+            // Response
+            Card {
+              width: parent.width
+              implicitHeight: respCol.implicitHeight + root.cardPad * 2
 
-            Column {
-              id: respCol
-              anchors.left: parent.left
-              anchors.right: parent.right
-              anchors.top: parent.top
-              anchors.margins: root.cardPad
-              spacing: 10
-
-              H2 { text: "Response" }
-
-              Row {
-                width: parent.width
+              Column {
+                id: respCol
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.margins: root.cardPad
                 spacing: 10
-                Text {
-                  width: parent.width * 0.6
-                  color: root.fg
-                  elide: Text.ElideRight
-                  text: xhr ? ("status: " + xhr.status + " " + xhr.statusText) : "status: (no xhr)"
+
+                H2 { text: "Response" }
+
+                Row {
+                  width: parent.width
+                  spacing: 10
+                  Text {
+                    width: parent.width * 0.6
+                    color: root.fg
+                    elide: Text.ElideRight
+                    text: xhr ? ("status: " + xhr.status + " " + xhr.statusText) : "status: (no xhr)"
+                  }
+                  Text {
+                    width: parent.width * 0.4 - 10
+                    color: root.muted
+                    horizontalAlignment: Text.AlignRight
+                    elide: Text.ElideRight
+                    text: xhr ? ("type: " + xhr.responseType) : ""
+                  }
                 }
+
                 Text {
-                  width: parent.width * 0.4 - 10
+                  width: parent.width
                   color: root.muted
-                  horizontalAlignment: Text.AlignRight
                   elide: Text.ElideRight
-                  text: xhr ? ("type: " + xhr.responseType) : ""
+                  text: xhr ? ("url: " + xhr.responseUrl) : ""
                 }
-              }
 
-              Text {
-                width: parent.width
-                color: root.muted
-                elide: Text.ElideRight
-                text: xhr ? ("url: " + xhr.responseUrl) : ""
-              }
-
-              FieldArea {
-                width: parent.width
-                height: root.narrow ? 170 : 220
-                readOnly: true
-                text: xhr ? xhr.responseText : ""
+                FieldArea {
+                  width: parent.width
+                  height: root.narrow ? 170 : 220
+                  readOnly: true
+                  text: xhr ? xhr.responseText : ""
+                }
               }
             }
-          }
 
-          // Log
-          Card {
-            width: parent.width
-            implicitHeight: logCol.implicitHeight + root.cardPad * 2
+            // Log
+            Card {
+              width: parent.width
+              implicitHeight: logCol.implicitHeight + root.cardPad * 2
 
-            Column {
-              id: logCol
-              anchors.left: parent.left
-              anchors.right: parent.right
-              anchors.top: parent.top
-              anchors.margins: root.cardPad
-              spacing: 10
-
-              Row {
-                width: parent.width
+              Column {
+                id: logCol
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.margins: root.cardPad
                 spacing: 10
-                H2 { text: "Event log" }
-                Item { width: 1; height: 1 } // spacer
-              }
 
-              Row {
-                width: parent.width
-                spacing: 10
-                PillButton {
-                  text: "Clear"
-                  onClicked: logModel.clear()
+                Row {
+                  width: parent.width
+                  spacing: 10
+                  H2 { text: "Event log" }
+                  Item { width: 1; height: 1 } // spacer
                 }
-                PillButton {
-                  text: "Self-test (GET/redirect/timeout)"
-                  onClicked: runSelfTest()
-                }
-                Text {
-                  width: parent.width - 320
-                  color: root.muted
-                  elide: Text.ElideRight
-                  verticalAlignment: Text.AlignVCenter
-                  text: xhr ? ("readyState: " + root.readyStateName(xhr.readyState)) : ""
-                }
-              }
 
-              Rectangle {
-                width: parent.width
-                height: root.narrow ? 220 : 260
-                radius: 10
-                color: "#141414"
-                border.color: root.border
-                border.width: 1
-                clip: true
+                Row {
+                  width: parent.width
+                  spacing: 10
+                  PillButton {
+                    text: "Clear"
+                    onClicked: logModel.clear()
+                  }
+                  PillButton {
+                    text: "Self-test (GET/redirect/timeout)"
+                    onClicked: runSelfTest()
+                  }
+                  Text {
+                    width: parent.width - 320
+                    color: root.muted
+                    elide: Text.ElideRight
+                    verticalAlignment: Text.AlignVCenter
+                    text: xhr ? ("readyState: " + root.readyStateName(xhr.readyState)) : ""
+                  }
+                }
 
-                ListView {
-                  anchors.fill: parent
-                  anchors.margins: 8
-                  model: logModel
+                Rectangle {
+                  width: parent.width
+                  height: root.narrow ? 220 : 260
+                  radius: 10
+                  color: "#141414"
+                  border.color: root.border
+                  border.width: 1
                   clip: true
-                  delegate: Text {
-                    width: ListView.view.width
-                    color: root.fg
-                    font.pixelSize: 12
-                    wrapMode: Text.Wrap
-                    text: "[" + t + "] " + m
+
+                  ListView {
+                    anchors.fill: parent
+                    anchors.margins: 8
+                    model: logModel
+                    clip: true
+                    delegate: Text {
+                      width: ListView.view.width
+                      color: root.fg
+                      font.pixelSize: 12
+                      wrapMode: Text.Wrap
+                      text: "[" + t + "] " + m
+                    }
                   }
                 }
               }
             }
-          }
 
-          Item { width: 1; height: 12 } // bottom breathing room
+            Item { width: 1; height: 12 } // bottom breathing room
+          }
         }
       }
     }
-
     onOpened: root.log("Panel opened (" + width + "x" + height + "), narrow=" + root.narrow)
     onClosed: root.log("Panel closed")
-  }
 
-  FileDialog {
-    id: fileDialog
-    title: "Pick a file to upload"
-    onAccepted: {
-      fileField.text = selectedFile.toString()
-      root.log("Picked file: " + fileField.text)
-    }
-  }
-
-  // request helpers
-  function applyHeaders() {
-    const lines = headersArea.text.split("\n")
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim()
-      if (!line) continue
-      const idx = line.indexOf(":")
-      if (idx <= 0) {
-        root.log("Header parse skipped: " + line)
-        continue
+    FileDialog {
+      id: fileDialog
+      title: "Pick a file to upload"
+      onAccepted: {
+        fileField.text = selectedFile.toString()
+        root.log("Picked file: " + fileField.text)
       }
-      const k = line.slice(0, idx).trim()
-      const v = line.slice(idx + 1).trim()
-      xhr.setRequestHeader(k, v)
-    }
-  }
-
-  function sendTextOrJson() {
-    if (!xhr) return
-
-    const method = methodBox.currentText
-    const url = urlField.text.trim()
-    const ms = parseInt(timeoutField.text || "0")
-
-    root.log("open(" + method + ", " + url + "), timeout=" + ms + "ms")
-    xhr.open(method, url)
-    xhr.timeout = isNaN(ms) ? 0 : ms
-
-    applyHeaders()
-
-    const hasCT = headersArea.text.toLowerCase().indexOf("content-type:") !== -1
-    const body = bodyArea.text
-
-    if (!hasCT && body && body.trim().length > 0 && method !== "GET" && method !== "HEAD") {
-      xhr.setRequestHeader("Content-Type", "application/json")
     }
 
-    xhr.send(body)
-  }
-
-  function sendMultipart() {
-    if (!xhr) return
-
-    const fileUrl = fileField.text.trim()
-    if (!fileUrl) {
-      root.log("No file selected; pick a local file first.")
-      iface.mainWindow().displayToast("Pick a local file first (file:///...)")
-      return
+    // request helpers
+    function applyHeaders() {
+      const lines = headersArea.text.split("\n")
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim()
+        if (!line) continue
+        const idx = line.indexOf(":")
+        if (idx <= 0) {
+          root.log("Header parse skipped: " + line)
+          continue
+        }
+        const k = line.slice(0, idx).trim()
+        const v = line.slice(idx + 1).trim()
+        xhr.setRequestHeader(k, v)
+      }
     }
 
-    const method = methodBox.currentText
-    const url = urlField.text.trim()
-    const ms = parseInt(timeoutField.text || "0")
-
-    root.log("open(" + method + ", " + url + ") multipart, timeout=" + ms + "ms")
-    xhr.open(method, url)
-    xhr.timeout = isNaN(ms) ? 0 : ms
-
-    applyHeaders()
-
-    xhr.setRequestHeader("Content-Type", "multipart/form-data")
-
-    const body = {}
-    body[uploadNameField.text.trim() || "file"] = fileUrl
-    body["note"] = uploadNoteField.text
-    body["ts"] = (new Date()).toISOString()
-
-    xhr.send(body)
-  }
-
-  // self-test
-  property int selfTestStep: 0
-
-  Timer {
-    id: selfTestTimer
-    interval: 250
-    repeat: false
-    onTriggered: root.nextSelfTestStep()
-  }
-
-  function runSelfTest() {
-    ensureXhr()
-    selfTestStep = 0
-    logModel.clear()
-    log("=== self-test start ===")
-    nextSelfTestStep()
-  }
-
-  function nextSelfTestStep() {
-    if (!xhr) return
-    selfTestStep += 1
-
-    if (selfTestStep === 1) {
-      urlField.text = "https://httpbin.org/get"
-      methodBox.currentIndex = 0
-      timeoutField.text = "0"
-      headersArea.text = ""
-      bodyArea.text = ""
-      sendTextOrJson()
-      selfTestTimer.start()
-      return
-    }
-
-    if (selfTestStep === 2) {
-      urlField.text = "https://httpbin.org/redirect/1"
-      methodBox.currentIndex = 0
-      timeoutField.text = "0"
-      headersArea.text = ""
-      bodyArea.text = ""
-      sendTextOrJson()
-      selfTestTimer.start()
-      return
-    }
-
-    if (selfTestStep === 3) {
-      urlField.text = "https://httpbin.org/delay/5"
-      methodBox.currentIndex = 0
-      timeoutField.text = "1000"
-      headersArea.text = ""
-      bodyArea.text = ""
-      sendTextOrJson()
-      selfTestTimer.start()
-      return
-    }
-
-    log("=== self-test queued (watch callbacks) ===")
-  }
-
-  // also listen to C++ signals
-  Connections {
-    target: xhr
-    function onReadyStateChanged() {
-      root.log("signal readyStateChanged: " + (xhr ? root.readyStateName(xhr.readyState) : "?"))
-    }
-    function onResponseChanged() {
+    function sendTextOrJson() {
       if (!xhr) return
-      root.log("signal responseChanged: status=" + xhr.status + " bytes=" + (xhr.responseText ? xhr.responseText.length : 0))
-    }
-  }
 
-  Component.onCompleted: {
-    iface.mainWindow().displayToast("XHR Tester plugin loaded")
-    iface.addItemToPluginsToolbar(toolbarButton)
-    ensureXhr()
-    root.log("Plugin loaded; toolbar button added")
+      const method = methodBox.currentText
+      const url = urlField.text.trim()
+      const ms = parseInt(timeoutField.text || "0")
+
+      root.log("open(" + method + ", " + url + "), timeout=" + ms + "ms")
+      xhr.open(method, url)
+      xhr.timeout = isNaN(ms) ? 0 : ms
+
+      applyHeaders()
+
+      const hasCT = headersArea.text.toLowerCase().indexOf("content-type:") !== -1
+      const body = bodyArea.text
+
+      if (!hasCT && body && body.trim().length > 0 && method !== "GET" && method !== "HEAD") {
+        xhr.setRequestHeader("Content-Type", "application/json")
+      }
+
+      xhr.send(body)
+    }
+
+    function sendMultipart() {
+      if (!xhr) return
+
+      const fileUrl = fileField.text.trim()
+      if (!fileUrl) {
+        root.log("No file selected; pick a local file first.")
+        iface.mainWindow().displayToast("Pick a local file first (file:///...)")
+        return
+      }
+
+      const method = methodBox.currentText
+      const url = urlField.text.trim()
+      const ms = parseInt(timeoutField.text || "0")
+
+      root.log("open(" + method + ", " + url + ") multipart, timeout=" + ms + "ms")
+      xhr.open(method, url)
+      xhr.timeout = isNaN(ms) ? 0 : ms
+
+      applyHeaders()
+
+      xhr.setRequestHeader("Content-Type", "multipart/form-data")
+
+      const body = {}
+      body[uploadNameField.text.trim() || "file"] = fileUrl
+      body["note"] = uploadNoteField.text
+      body["ts"] = (new Date()).toISOString()
+
+      xhr.send(body)
+    }
+
+    // self-test
+    property int selfTestStep: 0
+
+    Timer {
+      id: selfTestTimer
+      interval: 250
+      repeat: false
+      onTriggered: root.nextSelfTestStep()
+    }
+
+    function runSelfTest() {
+      ensureXhr()
+      selfTestStep = 0
+      logModel.clear()
+      log("=== self-test start ===")
+      nextSelfTestStep()
+    }
+
+    function nextSelfTestStep() {
+      if (!xhr) return
+      selfTestStep += 1
+
+      if (selfTestStep === 1) {
+        urlField.text = "https://httpbin.org/get"
+        methodBox.currentIndex = 0
+        timeoutField.text = "0"
+        headersArea.text = ""
+        bodyArea.text = ""
+        sendTextOrJson()
+        selfTestTimer.start()
+        return
+      }
+
+      if (selfTestStep === 2) {
+        urlField.text = "https://httpbin.org/redirect/1"
+        methodBox.currentIndex = 0
+        timeoutField.text = "0"
+        headersArea.text = ""
+        bodyArea.text = ""
+        sendTextOrJson()
+        selfTestTimer.start()
+        return
+      }
+
+      if (selfTestStep === 3) {
+        urlField.text = "https://httpbin.org/delay/5"
+        methodBox.currentIndex = 0
+        timeoutField.text = "1000"
+        headersArea.text = ""
+        bodyArea.text = ""
+        sendTextOrJson()
+        selfTestTimer.start()
+        return
+      }
+
+      log("=== self-test queued (watch callbacks) ===")
+    }
+
+    // also listen to C++ signals
+    Connections {
+      target: xhr
+      function onReadyStateChanged() {
+        root.log("signal readyStateChanged: " + (xhr ? root.readyStateName(xhr.readyState) : "?"))
+      }
+      function onResponseChanged() {
+        if (!xhr) return
+        root.log("signal responseChanged: status=" + xhr.status + " bytes=" + (xhr.responseText ? xhr.responseText.length : 0))
+      }
+    }
+
+    Component.onCompleted: {
+      iface.mainWindow().displayToast("XHR Tester plugin loaded")
+      iface.addItemToPluginsToolbar(toolbarButton)
+      ensureXhr()
+      root.log("Plugin loaded; toolbar button added")
+    }
   }
 }
