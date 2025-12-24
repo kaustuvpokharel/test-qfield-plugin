@@ -58,11 +58,9 @@ Item {
 
   function ensureXhr() {
     if (xhr) return
-
-    xhr = QfieldHttpRequest.newRequest(root)   // <-- parented to root
+    xhr = iface.createHttpRequest(false)
     wireXhrCallbacks(xhr)
-
-    root.log("QfieldHttpRequest created via newRequest()")
+    root.log("QfieldHttpRequest created")
   }
 
   function resetXhr() {
