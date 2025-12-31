@@ -17,6 +17,12 @@ Item {
   readonly property int cardPad: 14
   readonly property bool narrow: panel.width < 720
 
+  property int lastStatus: 0
+  property string lastStatusText: ""
+  property string lastResponseType: ""
+  property string lastResponseUrl: ""
+  property string lastResponseText: ""
+
   ListModel { id: logModel }
 
   function ts() {
@@ -48,6 +54,8 @@ Item {
       root.log("onreadystatechange: " + root.readyStateName(x.readyState) +
                " (" + x.readyState + "), status=" + x.status)
     }
+    x.onload    = function() { root.log("onload: status=" + x.status) }
+    x.onloadend = function() { root.log("onloadend") }
     x.ondownloadprogress = function(received, total) { root.log("ondownloadprogress: " + received + " / " + total) }
     x.onuploadprogress   = function(sent, total)     { root.log("onuploadprogress: " + sent + " / " + total) }
     x.onredirected       = function(url)             { root.log("onredirected: " + url) }
@@ -400,6 +408,7 @@ Item {
   }
 
   function sendTextOrJson() {
+    ensureXhr()
     if (!xhr) return
 
     const method = methodBox.currentText
@@ -423,6 +432,7 @@ Item {
   }
 
   function sendMultipart() {
+    ensureXhr()
     if (!xhr) return
 
     const fileUrl = fileField.text.trim()
@@ -441,8 +451,6 @@ Item {
     xhr.timeout = isNaN(ms) ? 0 : ms
 
     applyHeaders()
-
-    xhr.setRequestHeader("Content-Type", "multipart/form-data")
 
     const body = {}
     body[uploadNameField.text.trim() || "file"] = fileUrl
@@ -835,7 +843,8 @@ Item {
                     Layout.fillWidth: true
                     color: root.fg
                     elide: Text.ElideRight
-                    text: xhr ? ("status: " + xhr.status + " " + xhr.statusText) : "status: (no xhr)"
+                    text: xhr ? ("status: " + xhr.status + " " + xhr.statusText)
+                              : ("status: " + lastStatus + " " + lastStatusText)
                   }
 
                   Text {
@@ -843,7 +852,7 @@ Item {
                     horizontalAlignment: Text.AlignRight
                     color: root.muted
                     elide: Text.ElideRight
-                    text: xhr ? ("type: " + xhr.responseType) : ""
+                    text: xhr ? ("type: " + xhr.responseType) : ("type: " + lastResponseType)
                   }
                 }
 
@@ -851,13 +860,13 @@ Item {
                   Layout.fillWidth: true
                   color: root.muted
                   elide: Text.ElideRight
-                  text: xhr ? ("url: " + xhr.responseUrl) : ""
+                  text: xhr ? ("url: " + xhr.responseUrl)   : ("url: " + lastResponseUrl)
                 }
 
                 FieldArea {
                   Layout.preferredHeight: root.narrow ? 170 : 220
                   readOnly: true
-                  text: xhr ? xhr.responseText : ""
+                  text: xhr ? xhr.responseText : lastResponseText
                 }
               }
             }
@@ -941,12 +950,24 @@ Item {
 
   Connections {
     target: xhr
+
     function onReadyStateChanged() {
       root.log("signal readyStateChanged: " + (xhr ? root.readyStateName(xhr.readyState) : "?"))
     }
+
     function onResponseChanged() {
       if (!xhr) return
+      lastStatus = xhr.status
+      lastStatusText = xhr.statusText
+      lastResponseType = xhr.responseType
+      lastResponseUrl = String(xhr.responseUrl)
+      lastResponseText = xhr.responseText
       root.log("signal responseChanged: status=" + xhr.status + " bytes=" + (xhr.responseText ? xhr.responseText.length : 0))
+    }
+
+    function onDestroyed() {   // QObject::destroyed
+      root.log("xhr destroyed")
+      xhr = null
     }
   }
 
